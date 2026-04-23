@@ -19,7 +19,6 @@ This is a personal/academic project.
 ├── .gitignore
 ├── notes/
 ├── exercises/
-├── resources/
 └── templates/
 ```
 
