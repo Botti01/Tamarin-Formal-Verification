@@ -1,0 +1,20 @@
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Python helpers (optional scripts)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local logs and temporary folders
+*.log
+tmp/
+output/
+
+# Tamarin local temporary files (if generated)
+.tamarin/
