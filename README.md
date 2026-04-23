@@ -8,55 +8,23 @@ This is a personal/academic project.
 
 - Keep structured notes while studying Tamarin.
 - Build protocol models incrementally.
-- Collect solved exercises and proof/attack reports.
+- Collect solved exercises and short proof notes.
 - Track progress over time in a clean, reproducible way.
 
-## Suggested Structure
+## Current Structure
 
 ```text
 .
 ├── README.md
 ├── .gitignore
-├── TamarinRecap.md
 ├── notes/
-│   ├── concepts/
-│   └── lecture-notes/
-├── models/
-│   ├── protocols/
-│   └── sandbox/
 ├── exercises/
-│   ├── basics/
-│   ├── intermediate/
-│   └── advanced/
-├── reports/
-│   ├── proofs/
-│   └── attacks/
 ├── resources/
 └── templates/
 ```
 
-## Quick Start
+## Official References
 
-1. Create a new model from `templates/protocol-template.spthy`.
-2. Run:
-
-```bash
-tamarin-prover <file>.spthy --prove
-```
-
-3. If needed, use GUI mode:
-
-```bash
-tamarin-prover interactive <file>.spthy
-```
-
-## Naming Conventions
-
-- Models: `models/protocols/<protocol-name>.spthy`
-- Exercises: `exercises/<level>/exXX_<topic>.spthy`
-- Reports: `reports/proofs/<model-name>.md`, `reports/attacks/<model-name>.md`
-
-## Notes
-
-- `TamarinRecap.md` currently contains the main summary notes.
-- Additional notes can be split into `notes/concepts` and `notes/lecture-notes`.
+- Main website: https://tamarin-prover.github.io/
+- Manual (latest): https://tamarin-prover.com/manual/master/book/
+- Source code repository: https://github.com/tamarin-prover/tamarin-prover
