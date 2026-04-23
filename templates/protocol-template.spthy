@@ -1,0 +1,19 @@
+theory Protocol_Template
+begin
+
+builtins: hashing
+
+// Minimal starter rule: creates a fresh value and marks it as secret.
+rule Generate_Secret:
+  [ Fr(~x) ]
+--[ Secret(~x) ]->
+  [ Out(h(~x)) ]
+
+lemma executable:
+  exists-trace
+  "Ex x #i. Secret(x) @ #i"
+
+lemma secrecy_of_x:
+  "All x #i. Secret(x) @ #i ==> not (Ex #j. K(x) @ #j)"
+
+end
