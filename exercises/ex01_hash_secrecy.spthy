@@ -1,0 +1,38 @@
+theory Ex01_Hash_Secrecy
+begin
+
+builtins: hashing
+
+// Exercise goal:
+// 1) generate a fresh secret,
+// 2) publish only its hash on the public channel,
+// 3) prove the raw secret stays unknown to the attacker.
+
+rule Generate_Secret_And_Publish_Hash:
+  // Fr(~secret) creates a fresh value known only to the honest process.
+  [ Fr(~secret) ]
+--[
+    // Action facts are recorded in the trace and can be used in lemmas.
+    SecretGenerated(~secret),
+    HashPublished(h(~secret))
+  ]->
+  // Out(...) sends data on the public network, so the attacker can read it.
+  [ Out(h(~secret)) ]
+
+// Sanity check: the protocol can actually run.
+lemma executable:
+  exists-trace
+  "Ex s #i. SecretGenerated(s) @ #i"
+
+// Main property: the attacker never learns the raw fresh secret.
+// Intuition: only h(secret) is sent, and symbolic hashing is one-way.
+lemma secrecy_of_raw_secret:
+  "All s #i. SecretGenerated(s) @ #i ==> not (Ex #j. K(s) @ #j)"
+
+// Expected leakage (existential version): since h(secret) is sent with Out(...),
+// there exists a trace where the attacker learns that hash value.
+lemma hash_can_be_learned:
+  exists-trace
+  "Ex hval #i #j. HashPublished(hval) @ #i & K(hval) @ #j"
+
+end
