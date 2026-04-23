@@ -22,6 +22,13 @@ This is a personal/academic project.
 └── templates/
 ```
 
+## Quick Navigation
+
+- Study notes: [notes/TamarinRecap.md](notes/TamarinRecap.md)
+- Starter template: [templates/protocol-template.spthy](templates/protocol-template.spthy)
+- Exercises folder: [exercises](exercises)
+
+
 ## Official References
 
 - Main website: https://tamarin-prover.github.io/
