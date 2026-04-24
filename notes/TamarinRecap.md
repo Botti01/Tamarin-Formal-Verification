@@ -224,3 +224,49 @@ Tamarin can simplify graphs by hiding some rules/arrows. The GUI offers differen
   lemma secrecy:
     "All x #i. Secret(x) @ i ==> not (Ex #j. K(x) @ j)"
   ```
+
+---
+
+## 14. Let Bindings and Global Macros
+
+Quando un termine complesso si ripete più volte all'interno della stessa regola, puoi usare il costrutto `let ... in` per creare delle macro locali. Questo rende le specifiche dei protocolli molto più leggibili.
+
+```tamarin
+rule MyRuleName:
+  let
+    foo = h(~x, y)
+  in
+  [ In(foo) ] --> [ Out(foo) ]
+```
+
+Se desideri utilizzare le stesse macro in più regole, lemmi o restrizioni, puoi definirle a livello globale tramite la keyword `macros:`.
+
+---
+
+## 15. Lemma Annotations (`[reuse]` e `[sources]`)
+
+Oltre a `[use_induction]`, ci sono altre annotazioni per i lemmi che modificano profondamente il modo in cui Tamarin esegue le dimostrazioni:
+* **`[reuse]`**: Un lemma con questa annotazione verrà utilizzato nelle dimostrazioni di tutti i lemmi successivi. È un meccanismo molto utile per dimostrare lemmi intermedi e semplificare la prova finale.
+* **`[sources]`**: Questo è fondamentale quando Tamarin non riesce a terminare una dimostrazione a causa di cicli infiniti durante la risoluzione (le cosiddette *partial deconstructions*). I *sources lemmas* vengono applicati automaticamente per aiutare a raffinare le origini dei fatti durante la precomputazione.
+
+---
+
+## 16. Observational Equivalence (Privacy)
+
+I lemmi classici ragionano sulle singole tracce di esecuzione del protocollo. Per esprimere invece proprietà di privacy o di indistinguibilità crittografica, Tamarin supporta l'*Observational Equivalence*.
+Questa funzionalità permette di dimostrare che un intruso non è in grado di distinguere due istanze di un sistema. Si modella utilizzando l'operatore `diff(x, y)` per i termini che differiscono tra le due istanze e richiede l'avvio di Tamarin dal terminale con il flag `--diff`.
+
+---
+
+## 17. Altri Built-ins Utili
+
+Oltre alle primitive di base, il manuale fornisce altri built-in che si rivelano essenziali nella modellazione avanzata:
+* **`xor`**: Modella l'operazione di OR esclusivo (XOR) e include automaticamente le relative equazioni di cancellazione logica.
+* **`multiset`**: Introduce l'operatore associativo-commutativo `++` per modellare i multi-insiemi.
+* **`natural-numbers`**: Definisce la costante `%1` e l'operatore `%+` per implementare dei contatori di stato.
+
+---
+
+## 18. Process Calculus (SAPIC+)
+
+Un protocollo non deve necessariamente essere scritto tramite regole isolate. Tamarin integra **SAPIC+** (Stateful Applied PI-Calculus), che ti permette di descrivere il comportamento come un singolo processo sequenziale. Il processo viene poi tradotto internamente nel corrispondente set di regole di multiset rewriting, semplificando a volte la modellazione di flussi molto lineari.
