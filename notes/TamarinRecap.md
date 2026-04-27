@@ -79,23 +79,23 @@ Tamarin uses a top sort `msg`, with subsorts such as `fresh`, `pub`, and `nat`. 
 
 ## 6. Facts, terms, substitutions, matching, unification, rewriting
 
-### Definizioni in italiano
+### Definitions
 
-* **Fact**: Un *fact* è come un “contenitore di stato” o un predicato simbolico. Serve per memorizzare informazioni durante l’esecuzione del protocollo: ad esempio chi ha una chiave, cosa è stato inviato, cosa è stato ricevuto, o quali condizioni valgono in un certo momento. I facts possono essere lineari oppure persistenti.
-* **Term**: Un *term* è un messaggio simbolico costruito con costanti, variabili e funzioni. Per esempio `h(k)`, `pk(~ltk)` e `aenc(m, pk(sk))` sono terms. In Tamarin, i messaggi non sono numeri o stringhe “concrete”, ma strutture simboliche.
-* **Substitution**: Una *substitution* è una sostituzione di variabili con termini. Per esempio, se `x ↦ aenc(m, pk(sk))`, allora ogni occorrenza di `x` viene rimpiazzata con quel termine. In Tamarin le substitution servono per istanziare regole, fatti e vincoli.
-* **Matching**: Il *matching* è il processo di verificare se un pattern può essere reso uguale a un termine tramite una sostituzione appropriata, senza dover cambiare liberamente entrambe le parti. In pratica si cerca una sostituzione per far combaciare un lato con l’altro.
-* **Unification**: L’*unification* è più generale del matching: cerca una sostituzione che renda uguali due termini. Se il matching è “pattern contro termine”, l’unification è “termine contro termine” e cerca una soluzione comune. Se esistono più variabili, la soluzione può essere non unica.
-* **Rewriting**: Il *rewriting* è la trasformazione di un termine o di uno stato usando una regola. In Tamarin, le regole di multiset rewriting descrivono come lo stato evolve: se i facts nel lato sinistro della regola sono presenti, la regola può scattare e produrre i facts del lato destro.
-* **Multiset rewriting**: Il *multiset rewriting* è il meccanismo di base di Tamarin: lo stato è un multinsieme di facts, non un insieme ordinato. Applicare una regola significa consumare alcuni facts e produrne altri, rispettando le condizioni della regola.
+* **Fact**: A fact is like a "state container" or a symbolic predicate. It is used to store information during protocol execution: for example, who has a key, what was sent, what was received, or what conditions hold at a given moment. Facts can be linear (consumable) or persistent.
+* **Term**: A term is a symbolic message built with constants, variables, and functions. For example, `h(k)`, `pk(~ltk)`, and `aenc(m, pk(sk))` are terms. In Tamarin, messages are not concrete numbers or strings, but symbolic structures.
+* **Substitution**: A replacement of variables with terms. For instance, if `x ↦ aenc(m, pk(sk))`, then every occurrence of `x` is replaced with that term. In Tamarin, substitutions are used to instantiate rules, facts, and constraints.
+* **Matching**: The process of checking whether a pattern can be made equal to a term via an appropriate substitution, without freely changing both sides. Essentially, it means adapting a pattern to fit a term.
+* **Unification**: More general than matching: it seeks a substitution that makes two terms equal. If matching is "pattern versus term," unification is "term versus term" and looks for a common solution. If multiple variables exist, the solution might not be unique.
+* **Rewriting**: The transformation of a term or state using a rule. In Tamarin, multiset rewriting rules describe how the state evolves: if the facts on the left side of the rule are present, the rule can fire and produce the facts on the right side.
+* **Multiset rewriting**: Tamarin's core mechanism: the state is a multiset of facts, not an ordered set. Applying a rule means consuming some facts and producing others, while respecting the rule's conditions.
 
-### Versione breve da ricordare
-* **facts** = stato
-* **terms** = messaggi simbolici
-* **substitutions** = variabili rimpiazzate da termini
-* **matching** = adattare un pattern a un termine
-* **unification** = trovare una sostituzione che renda uguali due espressioni
-* **rewriting** = applicare una regola per trasformare lo stato
+### Short version to remember
+* **facts** = state
+* **terms** = symbolic messages
+* **substitutions** = variables replaced by terms
+* **matching** = fitting a pattern to a term
+* **unification** = finding a substitution that makes two expressions equal
+* **rewriting** = applying a rule to transform the state
 
 ---
 
@@ -110,9 +110,9 @@ rule RuleName:
   [ Conclusions ] // State Facts
 ```
 
-**La differenza fondamentale:**
-* **State Facts (Premesse/Conclusioni):** Stanno dentro le parentesi quadre `[ ]`. Esistono nello stato e vengono consumati (se lineari) o restano (se persistenti). *Non puoi usarli direttamente nei lemmi.*
-* **Action Facts (Etichette):** Stanno dentro i trattini `--[ ]->`. Non fanno parte dello stato, ma vengono registrati nella "traccia" (la cronologia degli eventi). *I lemmi possono leggere SOLO questi fatti.*
+**The fundamental difference:**
+* **State Facts (Premises/Conclusions):** They are placed inside square brackets `[ ]`. They exist in the state and are consumed (if linear) or remain (if persistent). *You cannot use them directly in lemmas.*
+* **Action Facts (Labels):** They are placed inside the dashes `--[ ]->`. They are not part of the state, but are recorded in the "trace" (the history of events). *Lemmas can ONLY read these facts.*
 
 ```tamarin
 rule Send_Message:
@@ -125,17 +125,17 @@ rule Send_Message:
 
 ## 8. Restrictions
 
-Le regole definiscono cosa *può* succedere, le restrizioni definiscono cosa è *permesso* che esista in una traccia valida. Sono fondamentali per filtrare comportamenti indesiderati che non hanno senso logico nel protocollo.
-Se una traccia viola una restrizione, Tamarin la scarta.
+Rules define what *can* happen, restrictions define what is *allowed* to exist in a valid trace. They are fundamental for filtering out undesired behaviors that make no logical sense in the protocol.
+If a trace violates a restriction, Tamarin simply discards it.
 
-**Esempio classico (Verifica di uguaglianza):**
-Spesso usato per verificare firme, MAC o pattern matching rigidi.
+**Classic example (Equality check):**
+Often used to verify signatures, MACs, or strict pattern matching.
 
 ```tamarin
 restriction Equality:
   "All x y #i. Eq(x,y) @i ==> x = y"
 ```
-*(Questa restrizione richiede che ci sia una regola con l'Action Fact `--[ Eq(a, b) ]->`)*
+*(This restriction requires that there is a rule with the Action Fact `--[ Eq(a, b) ]->`)*
 
 ---
 
@@ -152,8 +152,8 @@ A lemma states a property that Tamarin should prove or refute. Lemmas are trace 
 * `==>` = implication
 
 **Induction:**
-Quando scrivi lemmi su fatti persistenti o su protocolli con cicli infiniti (es. chiavi aggiornate continuamente, o sessioni ripetute), il prover base spesso va in un loop infinito.
-Aggiungendo `[use_induction]`, Tamarin proverà a dimostrare il lemma per induzione.
+When you write lemmas on persistent facts or on protocols with infinite loops (e.g., continuously updated keys, or repeated sessions), the basic prover often goes into an infinite loop.
+By adding `[use_induction]`, Tamarin will try to prove the lemma by induction.
 
 ```tamarin
 lemma My_Security_Property [use_induction]:
@@ -210,16 +210,16 @@ Tamarin can simplify graphs by hiding some rules/arrows. The GUI offers differen
 
 ## 13. Tips & Best Practices (Extra)
 
-* **Sanity Checks (Existential Lemmas):** Prima di provare che il protocollo è sicuro, prova che *può funzionare*. Scrivi un lemma con `exists-trace`. Se Tamarin non trova una traccia, significa che hai modellato regole che si bloccano a vicenda.
+* **Sanity Checks (Existential Lemmas):** Before proving that the protocol is secure, prove that it *can work*. Write a lemma with `exists-trace`. If Tamarin cannot find a trace, it means you have modeled rules that block each other.
   ```tamarin
   lemma executable:
     exists-trace
     "Ex A B m #i #j. Send(A, m) @ #i & Receive(B, m) @ #j & #i < #j"
   ```
-* **Injective vs Non-Injective Agreement:** Quando modelli l'autenticazione, ricorda la differenza. *Non-injective* significa che B sa di parlare con A. *Injective* garantisce anche che ad ogni sessione di B corrisponda una e una sola sessione di A (previene i *replay attack*).
-* **Chiavi e Freshness:** Usa sempre il prefisso `~` per chiavi di sessione e nonce (es. `~k`). Se usi variabili pubbliche `$k`, l'avversario ne avrà immediatamente il controllo.
-* **Evita regole troppo grosse:** Se una regola fa troppe cose contemporaneamente (es. riceve un messaggio, decritta, genera chiavi, esegue controlli complessi e invia la risposta), il prover fatica. Cerca di mantenere i passaggi atomici o logici.
-* **Action Facts per i Secret:** Un modo elegante per testare la segretezza è emettere un Action Fact `--[ Secret(x) ]->` quando un agente calcola una chiave, e poi usare un lemma per verificare che l'avversario (rappresentato dal fact `K(x)`) non possa mai conoscerla.
+* **Injective vs Non-Injective Agreement:** When modeling authentication, remember the difference. *Non-injective* means B knows he is talking to A. *Injective* also guarantees that to each session of B corresponds exactly one session of A (prevents *replay attacks*).
+* **Keys and Freshness:** Always use the `~` prefix for session keys and nonces (e.g., `~k`). If you use public variables `$k`, the adversary will immediately have control over them.
+* **Avoid overly large rules:** If a rule does too many things simultaneously (e.g., receives a message, decrypts, generates keys, performs complex checks, and sends the response), the prover struggles. Try to keep steps atomic or logical.
+* **Action Facts for Secrets:** An elegant way to test secrecy is to emit an Action Fact `--[ Secret(x) ]->` when an agent computes a key, and then use a lemma to verify that the adversary (represented by the fact `K(x)`) can never know it.
   ```tamarin
   lemma secrecy:
     "All x #i. Secret(x) @ i ==> not (Ex #j. K(x) @ j)"
@@ -229,7 +229,7 @@ Tamarin can simplify graphs by hiding some rules/arrows. The GUI offers differen
 
 ## 14. Let Bindings and Global Macros
 
-Quando un termine complesso si ripete più volte all'interno della stessa regola, puoi usare il costrutto `let ... in` per creare delle macro locali. Questo rende le specifiche dei protocolli molto più leggibili.
+When a complex term is repeated multiple times within the same rule, you can use the `let ... in` construct to create local macros. This makes protocol specifications much more readable.
 
 ```tamarin
 rule MyRuleName:
@@ -239,34 +239,81 @@ rule MyRuleName:
   [ In(foo) ] --> [ Out(foo) ]
 ```
 
-Se desideri utilizzare le stesse macro in più regole, lemmi o restrizioni, puoi definirle a livello globale tramite la keyword `macros:`.
+If you want to use the same macros across multiple rules, lemmas, or restrictions, you can define them globally using the `macros:` keyword.
 
 ---
 
-## 15. Lemma Annotations (`[reuse]` e `[sources]`)
+## 15. Lemma Annotations (`[reuse]` and `[sources]`)
 
-Oltre a `[use_induction]`, ci sono altre annotazioni per i lemmi che modificano profondamente il modo in cui Tamarin esegue le dimostrazioni:
-* **`[reuse]`**: Un lemma con questa annotazione verrà utilizzato nelle dimostrazioni di tutti i lemmi successivi. È un meccanismo molto utile per dimostrare lemmi intermedi e semplificare la prova finale.
-* **`[sources]`**: Questo è fondamentale quando Tamarin non riesce a terminare una dimostrazione a causa di cicli infiniti durante la risoluzione (le cosiddette *partial deconstructions*). I *sources lemmas* vengono applicati automaticamente per aiutare a raffinare le origini dei fatti durante la precomputazione.
+Besides `[use_induction]`, there are other lemma annotations that deeply change how Tamarin executes proofs:
+* **`[reuse]`**: A lemma with this annotation will be used in the proofs of all subsequent lemmas. It is a very useful mechanism for proving intermediate lemmas and simplifying the final proof.
+* **`[sources]`**: This is essential when Tamarin fails to finish a proof due to infinite loops during resolution (the so-called *partial deconstructions*). *Sources lemmas* are applied automatically to help refine fact origins during precomputation.
 
 ---
 
 ## 16. Observational Equivalence (Privacy)
 
-I lemmi classici ragionano sulle singole tracce di esecuzione del protocollo. Per esprimere invece proprietà di privacy o di indistinguibilità crittografica, Tamarin supporta l'*Observational Equivalence*.
-Questa funzionalità permette di dimostrare che un intruso non è in grado di distinguere due istanze di un sistema. Si modella utilizzando l'operatore `diff(x, y)` per i termini che differiscono tra le due istanze e richiede l'avvio di Tamarin dal terminale con il flag `--diff`.
+Classical lemmas reason over single protocol execution traces. To express privacy or cryptographic indistinguishability properties, Tamarin supports *Observational Equivalence*.
+This feature allows proving that an intruder cannot distinguish between two instances of a system. It is modeled using the `diff(x, y)` operator for terms that differ between the two instances and requires starting Tamarin from the terminal with the `--diff` flag.
 
 ---
 
-## 17. Altri Built-ins Utili
+## 17. Other Useful Built-ins
 
-Oltre alle primitive di base, il manuale fornisce altri built-in che si rivelano essenziali nella modellazione avanzata:
-* **`xor`**: Modella l'operazione di OR esclusivo (XOR) e include automaticamente le relative equazioni di cancellazione logica.
-* **`multiset`**: Introduce l'operatore associativo-commutativo `++` per modellare i multi-insiemi.
-* **`natural-numbers`**: Definisce la costante `%1` e l'operatore `%+` per implementare dei contatori di stato.
+In addition to the basic primitives, the manual provides other built-ins that are essential in advanced modeling:
+* **`xor`**: Models the exclusive OR (XOR) operation and automatically includes the related logical cancellation equations.
+* **`multiset`**: Introduces the associative-commutative `++` operator to model multisets.
+* **`natural-numbers`**: Defines the `%1` constant and the `%+` operator to implement state counters.
 
 ---
 
 ## 18. Process Calculus (SAPIC+)
 
-Un protocollo non deve necessariamente essere scritto tramite regole isolate. Tamarin integra **SAPIC+** (Stateful Applied PI-Calculus), che ti permette di descrivere il comportamento come un singolo processo sequenziale. Il processo viene poi tradotto internamente nel corrispondente set di regole di multiset rewriting, semplificando a volte la modellazione di flussi molto lineari.
+Instead of writing fragmented multiset rewriting rules, SAPIC+ (Stateful Applied PI-Calculus) allows you to model a protocol as a sequential flow, similar to classical programming. Tamarin will then automatically compile the process into the underlying multiset rewriting rules.
+
+This is the basic syntax for defining processes (`P`, `Q`):
+
+### Basic Constructs
+* `new ~n; P` : Generates a fresh value `~n`.
+* `out(t); P` : Sends term `t` on the public channel.
+* `in(x); P` : Receives a message from the public channel and binds it to variable `x`.
+* `out(c, t); P` : Sends `t` on a private/authenticated channel `c`.
+* `in(c, x); P` : Receives from a channel `c` and binds to `x`.
+* `if cond then P else Q` : Conditional branch (e.g., to check if two values match).
+* `let x = t in P else Q` : Pattern matching or assignment.
+* `P | Q` : Parallel execution (the two processes proceed simultaneously).
+* `!P` : Replication (generates infinite concurrent instances of `P`, essential for modeling multiple sessions).
+* `0` : Null process (terminates the branch).
+
+### Global State Management (Stateful)
+Unlike traditional Pi-Calculus, SAPIC+ allows managing shared key-value databases between processes, which is fundamental for modeling complex logic like certificate revocations or counters:
+* `insert k, v; P` : Inserts or updates the value `v` associated with the key `k`.
+* `lookup k as x in P else Q` : Looks up the key `k`. If it exists, binds its value to `x` and continues in `P`, otherwise executes `Q`.
+* `delete k; P` : Removes the key `k` from the global state.
+
+### Events and Synchronization
+* `event F; P` : Emits an Action Fact `F` exactly when the process reaches that point (necessary for lemmas and history tracking).
+* `lock t; P` and `unlock t; P` : Mutual exclusion mechanism to avoid race conditions when multiple processes attempt to access the same global state in parallel.
+
+### Practical Example
+
+```tamarin
+process:
+!(
+  // Start a new session with a fresh key
+  new ~k;
+  
+  // Emit an event for security lemmas
+  event SessionStarted(~k);
+  
+  // Store the key in the global database with a public identifier
+  insert <'session_key', $A>, ~k;
+  
+  // Send the key encrypted with B's public key
+  out(aenc(~k, pkB));
+  
+  // Terminate this process instance
+  0
+)
+```
+
