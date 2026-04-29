@@ -17,13 +17,13 @@ functions: kdf/2
 
 rule Alex_nonce:
     [ Fr(~na) ]
-    --[ Send($A, $B, ~na) ]->
+    --[ ]->
     [ Out(~na), State_A1($A, $B, ~na) ]
 
 
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]
-    --[ Receive(na) ]->
+    --[ ]->
     [ Out(~nb), State_B1($B, $A, ~nb, na) ]
 
 rule Alex_ack:
@@ -31,7 +31,7 @@ rule Alex_ack:
         SK = kdf(~na, nb)
     in
     [State_A1($A, $B, ~na), In(nb)]
-    --[ Receive(nb), SendAck('ACK'), Install(SK), DONE($A) ]->
+    --[ Install(SK), DONE($A) ]->
     [Out('ACK'), SK_Installed($A, $B, SK, ~na, nb) ]
 
 rule Blake_ack:
@@ -39,7 +39,7 @@ rule Blake_ack:
         SK = kdf(na, ~nb)
     in
     [ State_B1($B, $A, ~nb, na), In('ACK') ]
-    --[ ReceiveAck('ACK'), Install(SK), DONE($B) ]->
+    --[ Install(SK), DONE($B) ]->
     [ SK_Installed($B, $A, SK, na, ~nb) ]
 
 
@@ -47,6 +47,19 @@ lemma BothDone:
     exists-trace
     " Ex A B #i #j. DONE(A)@i & DONE(B)@j & #i < #j "
 
+// EDUCATIONAL NOTE:
+// In this lemma we are using the generic action `DONE(B)`.
+// Since we used the action `DONE(...)` for both Alex and Blake in the rules,
+// Tamarin does not distinguish the roles: to the prover, it is just a "DONE" action associated with a public name.
+// Consequently, this single lemma tests the key secrecy for both actors simultaneously.
+// 
+// If we wanted to test the secrecy EXCLUSIVELY for Blake (without testing Alex),
+// we would have to use different action fact names in the rules:
+// - In rule Alex_ack: --[ DONE_A($A) ]->
+// - In rule Blake_ack: --[ DONE_B($B) ]->
+// And the lemma would be:
+// lemma SecureKey_Blake:
+//     " All B SK #j. DONE_B(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
 lemma SecureKey:
     " All B SK #j. DONE(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
 

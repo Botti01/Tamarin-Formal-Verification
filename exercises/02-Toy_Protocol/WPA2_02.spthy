@@ -1,0 +1,62 @@
+
+/*
+ *  Author: Andrea Botticella
+ *  Model Name: WPA2.spthy
+ *  Status: WORK IN PROGRESS
+ *
+ *  Comments:
+ */
+
+theory WPA2_02
+begin
+
+builtins: symmetric-encryption
+
+functions: kdf/3    // SK = kdf(MK, na, nb)
+
+rule init_MK:
+    [ Fr(~mk) ]
+    --[ ]->
+    [ !MK($A, $B, ~mk) ]
+
+rule Alex_nonce:
+    [ Fr(~na) ]
+    --[ Send($A, $B, ~na) ]->
+    [ Out(~na), State_A1($A, $B, ~na) ]
+
+
+rule Blake_nonce:
+    [ Fr(~nb), In(na) ]
+    --[ Receive(na) ]->
+    [ Out(~nb), State_B1($B, $A, ~nb, na) ]
+
+rule Alex_ack:
+    let
+        SK = kdf(mk, ~na, nb)
+    in
+    [State_A1($A, $B, ~na), In(nb), !MK($A, $B, mk) ]
+    --[ Receive(nb), SendAck('ACK'), Install(SK), DONE_A($A) ]->
+    [Out('ACK'), SK_Installed($A, $B, SK, ~na, nb) ]
+
+rule Blake_ack:
+    let
+        SK = kdf(mk, na, ~nb)
+    in
+    [ State_B1($B, $A, ~nb, na), In('ACK'), !MK($A, $B, mk) ]
+    --[ ReceiveAck('ACK'), Install(SK), DONE_B($B) ]->
+    [ SK_Installed($B, $A, SK, na, ~nb) ]
+
+
+lemma BothDone:
+    exists-trace
+    " Ex A B #i #j. DONE_A(A)@i & DONE_B(B)@j & #i < #j "
+
+lemma SecureKey:
+    " All B SK #j. DONE_B(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
+
+
+lemma OnlyBlakeDone:
+    exists-trace
+    " Ex B #j. DONE_B(B)@#j & not (Ex A #i. DONE_A(A)@i & #i < #j) "
+
+end
