@@ -23,6 +23,13 @@ Questa riga dichiara le primitive crittografiche integrate utilizzate nel modell
 
 Un'equazione chiave della teoria della crittografia asimmetrica integrata è che la decrittazione di un testo cifrato con la chiave privata corretta restituisce il testo in chiaro originale.
 
+### Teorie Equazionali Personalizzate (Custom Equational Theories)
+A volte i built-ins non sono sufficienti. Puoi definire le tue equazioni matematiche personalizzate in cima al file usando la parola chiave `equations:`.
+```tamarin
+equations: f(g(x)) = x
+```
+Tuttavia, per la stragrande maggioranza dei protocolli standard, le primitive integrate bastano e avanzano.
+
 ---
 
 ## 3. Modellare una Public Key Infrastructure (PKI)
@@ -135,6 +142,20 @@ restriction Equality:
   "All x y #i. Eq(x,y) @i ==> x = y"
 ```
 *(Questa restrizione richiede che ci sia una regola con l'Action Fact `--[ Eq(a, b) ]->`)*
+
+### Embedded Restrictions (Restrizioni incorporate)
+Oltre alle restrizioni globali, le versioni moderne di Tamarin permettono di usare **restrizioni incorporate** direttamente all'interno degli Action Fact di una regola tramite la parola chiave speciale `_restrict()`. Questo evita di dover definire una restrizione globale e un fatto `Eq` per controlli semplici.
+
+```tamarin
+rule B_receive_embedded:
+  [ In(<m, sig>), !Pk(A, pkA) ]
+--[ 
+    Recv(m),
+    _restrict(verify(sig, m, pkA) = true) // Restrizione incorporata!
+  ]->
+  [ State(m) ]
+```
+Se la condizione all'interno di `_restrict()` risulta falsa, la regola semplicemente non può scattare e la traccia viene scartata, esattamente come una restrizione globale, ma con un codice molto più compatto.
 
 ---
 

@@ -23,6 +23,13 @@ This declares the built-in cryptographic primitives used by the model. Tamarin a
 
 A key equation of the built-in asymmetric encryption theory is that decrypting a ciphertext with the correct private key returns the original plaintext.
 
+### Custom Equational Theories
+Sometimes the built-ins are not enough. You can define your own mathematical equations at the top of the file using the `equations:` keyword.
+```tamarin
+equations: f(g(x)) = x
+```
+However, for the vast majority of standard protocols, the built-ins are perfectly sufficient.
+
 ---
 
 ## 3. Modeling a Public Key Infrastructure
@@ -136,6 +143,21 @@ restriction Equality:
   "All x y #i. Eq(x,y) @i ==> x = y"
 ```
 *(This restriction requires that there is a rule with the Action Fact `--[ Eq(a, b) ]->`)*
+
+### Embedded Restrictions
+In addition to global restrictions, modern Tamarin allows **embedded restrictions** directly inside a rule's action facts using the special `_restrict()` keyword. This avoids the need to define a global restriction and emit an `Eq` fact for simple checks.
+
+```tamarin
+rule B_receive_embedded:
+  [ In(<m, sig>), !Pk(A, pkA) ]
+--[ 
+    Recv(m),
+    _restrict(verify(sig, m, pkA) = true) // Embedded restriction!
+  ]->
+  [ State(m) ]
+```
+If the condition inside `_restrict()` evaluates to false, the rule simply cannot fire and the trace is discarded, exactly like a global restriction but without the extra boilerplate.
+
 
 ---
 
