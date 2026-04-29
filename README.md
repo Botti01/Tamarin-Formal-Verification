@@ -31,6 +31,7 @@ This is a personal/academic project.
 
 ## Official References
 
-- Main website: https://tamarin-prover.github.io/
-- Manual (latest): https://tamarin-prover.com/manual/master/book/
-- Source code repository: https://github.com/tamarin-prover/tamarin-prover
+- Main website: [Tamarin Website](https://tamarin-prover.github.io/)
+- Manual (latest): [Manual](https://tamarin-prover.com/manual/master/book/001_introduction.html)
+- Source code repository: [Tamarin Github](https://github.com/tamarin-prover/tamarin-prover)
+
