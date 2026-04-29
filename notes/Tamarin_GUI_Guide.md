@@ -43,10 +43,11 @@ When you click on a lemma, Tamarin attempts to prove it. The central pane will d
 
 When a lemma is falsified (Red), or an `exists-trace` lemma is verified (Green), Tamarin generates a visual graph. Clicking on the final node of the proof tree will display this graph on the right pane.
 
-### Understanding the Nodes (Boxes)
-Every box in the graph represents a **Rule** that was executed.
-- The **top half** of the box shows the **Action Facts** (`--[ ]->` part of your rule).
-- The **bottom half** shows the rule name and the exact variable instantiations for that specific run.
+### Understanding the Shapes (Rectangles vs Ovals)
+- **Rectangles (Boxes)**: These represent the **Honest Rules** that you wrote in your `.spthy` file. 
+  - The **top half** shows the **Action Facts** (`--[ ]->` part of your rule).
+  - The **bottom half** shows the rule name and the exact variable instantiations for that specific run.
+- **Ovals**: These represent actions taken by the **Attacker** or the **System** (rules built into Tamarin that you didn't write). If you see an oval, the attacker or the network is doing something.
 
 ### Understanding the Edges (Arrows)
 Arrows represent the flow of **Facts** (data and state) from one rule to another.
