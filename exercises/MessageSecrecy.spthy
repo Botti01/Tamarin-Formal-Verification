@@ -1,0 +1,88 @@
+theory MessageSecrecy
+begin
+
+
+builtins: asymmetric-encryption
+
+
+/*
+Protocol: 
+A wants to send a message to B.
+
+  1. A -> B: {A, na}pk(B)
+
+*/
+
+
+// Public key infrastructure
+rule Register_pk:
+    [Fr(~ltkX)]                     // An agent X generates a fresh long-term key ltkX
+    
+    -->                             // transition rule that
+    
+    [!Ltk($X, ~ltkX),               // persistent fact that X has a long-term key
+     !Pk($X, pk(~ltkX)),            // persistent fact that X has a public key
+     Out(pk(~ltkX))]                // X sends its public key to the network
+
+
+// Compromising an agent's long-term key
+rule Reveal_ltk:
+    [!Ltk($X, ~ltkX)]               // persistent fact that X has a long-term key
+    
+    --[Reveal_ltk($X)]->            // Reveal_ltk is an action fact that is consumed when the rule is applied
+    
+    [Out(~ltkX)]                    // X sends its long-term key to the network
+
+
+// Role A sends first message
+rule A1_send:
+    [Fr(~na),                       // A generates a fresh nonce n
+     !Ltk($A, ltkA),                // A has a long-term key ltkA
+     !Pk($B, pkB)]                  // B has a public key pkB
+    
+    --[Send($A, aenc(<$A, ~na>, pkB)),      // A sends the encrypted nonce to B
+       Secret(~na),                 // ~na is a secret nonce
+       Honest($A),                  // A is honest
+       Honest($B),                  // B is honest
+       Role('A')]->                 // A is playing the role of A
+    
+    [St_A1($A, ltkA, pkB, $B, ~na),     // St_A1 is state fact that is consumed when the rule is applied.
+    Out(aenc(<$A, ~na>, pkB))]         // A sends the encrypted nonce to B
+
+
+// Role B receives is first message
+rule B1_receive:
+    [!Ltk($B, ltkB),                // B has a long-term key ltkB
+     In(aenc(<$A, na>, pk(ltkB)))]  // B receives an encrypted nonce from A
+    
+    --[Recv($B, aenc(<$A, na>, pk(ltkB))),      // B receives an encrypted nonce from A
+       Secret(na),                  // na is a secret nonce
+       Honest(B),                   // B is honest
+       Honest(A),                   // A is honest
+       Role('B')]->                 // B is playing the role of B
+    
+    [St_B1($B, ltkB, $A, na)]       // St_B1 is state fact that is consumed when the rule is applied.
+
+
+// Executability lemma: checks if the protocol is executable
+lemma executable:
+    exists-trace                    // there exists a trace
+        // such that A sends a message to B and B receives it 
+        "Ex A B m #i #j. Send(A, m)@i & Recv(B, m)@j"
+
+
+// Secrecy lemma for A: checks if the protocol is secure for A
+lemma secret_A:
+    all-traces                      // for all traces
+        // such that if n is a secret nonce and A is an honest agent, then n is not known by any agent B and B is honest
+        "All n #i. Secret(n)@i & Role('A')@i ==> (not(Ex #j. K(n)@j)) | (Ex B #j. Reveal(B)@j & Honest(B)@i)"
+
+
+// Secrecy lemma for B: checks if the protocol is secure for B
+lemma secret_B:
+    all-traces                      // for all traces
+        // such that if n is a secret nonce and B is an honest agent, then n is not known by any agent B and B is honest
+        "All n #i. Secret(n)@i & Role('B')@i ==> (not(Ex #j. K(n)@j)) | (Ex B #j. Reveal(B)@j & Honest(B)@i)"
+
+
+end
