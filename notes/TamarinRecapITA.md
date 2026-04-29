@@ -235,7 +235,11 @@ Tamarin può semplificare i grafi nascondendo alcune regole/frecce. La GUI offre
     exists-trace
     "Ex A B m #i #j. Send(A, m) @ #i & Receive(B, m) @ #j & #i < #j"
   ```
-* **Injective vs Non-Injective Agreement:** Nell'autenticazione, *Non-injective* significa che B sa di parlare con A. *Injective* garantisce anche che ad ogni sessione di B corrisponda esattamente una sessione di A (previene i *replay attack*).
+* **I 4 Livelli di Autenticazione (Gerarchia di Lowe):** Quando modelli l'autenticazione, devi sapere a quale livello di sicurezza punti.
+  1. **Aliveness (Presenza):** Se B finisce il protocollo, sa che A è "viva" e ha eseguito il protocollo di recente. *Problema:* A potrebbe aver parlato con C, non con B!
+  2. **Weak Agreement (Accordo Debole):** B sa che A è viva e che A intendeva parlare proprio con B. *Problema:* Potrebbero non essere d'accordo su quale sia il ruolo di ciascuno o sui dati scambiati.
+  3. **Non-injective Agreement (Accordo Non-Iniettivo):** A e B sono d'accordo sulle reciproche identità e su tutti i dati scambiati (es. la chiave di sessione). *Problema:* Non protegge dai *replay attack* (un messaggio di A potrebbe essere inviato 5 volte a B).
+  4. **Injective Agreement (Accordo Iniettivo):** Il livello massimo. Aggiunge l'unicità (1-a-1). A ogni sessione completata da B corrisponde *esattamente una e una sola* sessione iniziata da A.
 * **Chiavi e Freshness:** Usa sempre il prefisso `~` per chiavi di sessione e nonce (es. `~k`). Se usi variabili pubbliche `$k`, l'avversario ne avrà immediatamente il controllo.
 * **Evita regole troppo grandi:** Se una regola fa troppe cose (riceve, decritta, genera chiavi e invia contemporaneamente), il prover fatica. Mantieni i passaggi atomici.
 * **Action Facts per la Segretezza:** Emetti un Action Fact `--[ Secret(x) ]->` quando viene calcolata una chiave, e usa un lemma per verificare che l'avversario (`K(x)`) non possa mai conoscerla.

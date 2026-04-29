@@ -238,7 +238,11 @@ Tamarin can simplify graphs by hiding some rules/arrows. The GUI offers differen
     exists-trace
     "Ex A B m #i #j. Send(A, m) @ #i & Receive(B, m) @ #j & #i < #j"
   ```
-* **Injective vs Non-Injective Agreement:** When modeling authentication, remember the difference. *Non-injective* means B knows he is talking to A. *Injective* also guarantees that to each session of B corresponds exactly one session of A (prevents *replay attacks*).
+* **The 4 Levels of Authentication (Lowe's Hierarchy):** When modeling authentication, be aware of the security level you are proving.
+  1. **Aliveness:** If B completes the protocol, B knows that A recently ran the protocol. *Issue:* A might have been communicating with C, not B!
+  2. **Weak Agreement:** B knows A ran the protocol and A intended to communicate with B. *Issue:* They might disagree on their roles or the data exchanged.
+  3. **Non-injective Agreement:** A and B agree on their identities and all the exchanged data (e.g., the session key). *Issue:* It does not prevent *replay attacks* (a message from A could be replayed 5 times to B).
+  4. **Injective Agreement:** The highest level. It adds uniqueness (1-to-1). For every session completed by B, there is exactly one corresponding session started by A.
 * **Keys and Freshness:** Always use the `~` prefix for session keys and nonces (e.g., `~k`). If you use public variables `$k`, the adversary will immediately have control over them.
 * **Avoid overly large rules:** If a rule does too many things simultaneously (e.g., receives a message, decrypts, generates keys, performs complex checks, and sends the response), the prover struggles. Try to keep steps atomic or logical.
 * **Action Facts for Secrets:** An elegant way to test secrecy is to emit an Action Fact `--[ Secret(x) ]->` when an agent computes a key, and then use a lemma to verify that the adversary (represented by the fact `K(x)`) can never know it.
