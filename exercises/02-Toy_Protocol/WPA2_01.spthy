@@ -1,0 +1,53 @@
+
+/*
+ *  Author: Andrea Botticella
+ *  Model Name: WPA2.spthy
+ *  Status: WORK IN PROGRESS
+ *
+ *  Comments:
+ */
+
+theory WPA2_01
+begin
+
+builtins: symmetric-encryption
+
+functions: kdf/2
+
+
+rule Alex_nonce:
+    [ Fr(~na) ]
+    --[ Send($A, $B, ~na) ]->
+    [ Out(~na), State_A1($A, $B, ~na) ]
+
+
+rule Blake_nonce:
+    [ Fr(~nb), In(na) ]
+    --[ Receive(na) ]->
+    [ Out(~nb), State_B1($B, $A, ~nb, na) ]
+
+rule Alex_ack:
+    let
+        SK = kdf(~na, nb)
+    in
+    [State_A1($A, $B, ~na), In(nb)]
+    --[ Receive(nb), SendAck('ACK'), Install(SK), DONE($A) ]->
+    [Out('ACK'), SK_Installed($A, $B, SK, ~na, nb) ]
+
+rule Blake_ack:
+    let
+        SK = kdf(na, ~nb)
+    in
+    [ State_B1($B, $A, ~nb, na), In('ACK') ]
+    --[ ReceiveAck('ACK'), Install(SK), DONE($B) ]->
+    [ SK_Installed($B, $A, SK, na, ~nb) ]
+
+
+lemma BothDone:
+    exists-trace
+    " Ex A B #i #j. DONE(A)@i & DONE(B)@j & #i < #j "
+
+lemma SecureKey:
+    " All B SK #j. DONE(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
+
+end
