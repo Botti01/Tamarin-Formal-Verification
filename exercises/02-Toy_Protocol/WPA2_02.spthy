@@ -21,9 +21,8 @@ rule init_MK:
 
 rule Alex_nonce:
     [ Fr(~na) ]
-    --[ Send($A, $B, ~na) ]->
+    --[ ]->
     [ Out(~na), State_A1($A, $B, ~na) ]
-
 
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]

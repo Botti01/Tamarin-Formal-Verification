@@ -20,7 +20,6 @@ rule Alex_nonce:
     --[ ]->
     [ Out(~na), State_A1($A, $B, ~na) ]
 
-
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]
     --[ ]->

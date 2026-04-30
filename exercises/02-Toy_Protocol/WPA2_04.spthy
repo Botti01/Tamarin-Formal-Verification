@@ -7,7 +7,7 @@
  *  Comments:
  */
 
-theory WPA2_03
+theory WPA2_04
 begin
 
 builtins: symmetric-encryption
@@ -21,13 +21,23 @@ rule init_MK:
 
 rule Alex_nonce:
     [ Fr(~na) ]
-    --[ ]->
+    --[ Send_A($A, $B, ~na) ]->
     [ Out(~na), State_A1($A, $B, ~na) ]
+
+rule Alex_resend_nonce:
+    [ State_A1($A, $B, na) ]
+    --[ Resend_A($A, $B, na) ]->
+    [ Out(na), State_A1($A, $B, na) ]
 
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]
-    --[ ]->
+    --[ Send_B($B, $A, ~nb, na) ]->
     [ Out(~nb), State_B1($B, $A, ~nb, na) ]
+
+rule Blake_resend_nonce:
+    [ State_B1($B, $A, nb, na) ]
+    --[ Resend_B($B, $A, nb, na) ]->
+    [ Out(nb), State_B1($B, $A, nb, na) ]
 
 rule Alex_ack:
     let
@@ -52,14 +62,26 @@ lemma BothDone:
     exists-trace
     " Ex A B #i #j. DONE_A(A)@i & DONE_B(B)@j & #i < #j "
 
+// NOTE:
+// To break the infinite backward search loop caused by the resend rules,
+// I must use "helper lemmas" marked with `[reuse, use_induction]`.
+// These lemmas prove mathematically that "a Resend can ONLY exist if an initial Send happened before".
+// Because of the `reuse` tag, Tamarin applies this rule automatically during the main proofs,
+// cutting off the infinite backward search instantly!
+
+lemma Helper_A_resend [reuse, use_induction]:
+    " All A B na #i. Resend_A(A, B, na)@#i ==> Ex #j. Send_A(A, B, na)@#j & #j < #i "
+
+lemma Helper_B_resend [reuse, use_induction]:
+    " All B A nb na #i. Resend_B(B, A, nb, na)@#i ==> Ex #j. Send_B(B, A, nb, na)@#j & #j < #i "
+
 lemma SecureKey:
     " All B SK #j. DONE_B(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
 
-// NOTE:
-// I am keeping the EXACT SAME lemma from Step 2 to visually see the improvement.
-// In Step 2, this lemma was RED (Falsified) because the ACK could be forged.
-// Now in Step 3, thanks to the MAC verification, this exact same lemma is GREEN (Verified).
 lemma Blake_Authentication:
     " All B #j. DONE_B(B)@#j ==> Ex A #i. DONE_A(A)@#i & #i < #j "
+
+lemma Alex_Done:
+    " All A SK #i. DONE_A(A)@#i & Install(SK)@#i ==> not (Ex #t. K(SK)@#t) "
 
 end
