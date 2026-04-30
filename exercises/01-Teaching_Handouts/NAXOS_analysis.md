@@ -48,7 +48,7 @@ If the function is intact, Tamarin mathematically verifies the key secrecy (`key
 - **Tamarin Result**: VERIFIED (22 steps)
 - **Explanation**: 
   The `key_secrecy` lemma is still verified because the cryptographic material (the Diffie-Hellman shares) is still secret. The adversary cannot compute the hash without the secrets.
-  **However**, removing the identities from the key derivation function usually opens the door to **Unknown Key-Share (UKS) attacks**. In a UKS attack, the secrecy is maintained, but the *authentication* is broken (e.g., Alice thinks she is talking to Bob, but Bob thinks he is talking to Eve). Since our lemma only checks secrecy and not authentication, Tamarin reports it as verified.
+  **However**, removing the identities from the key derivation function usually opens the door to **Unknown Key-Share (UKS) attacks**. In a UKS attack, the secrecy is maintained, but the *authentication* is broken (e.g., Alice thinks she is talking to Bob, but Bob thinks he is talking to Eve). Since my lemma only checks secrecy and not authentication, Tamarin reports it as verified.
 
 ---
 

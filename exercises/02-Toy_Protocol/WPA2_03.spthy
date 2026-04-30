@@ -7,12 +7,12 @@
  *  Comments:
  */
 
-theory WPA2_02
+theory WPA2_03
 begin
 
 builtins: symmetric-encryption
 
-functions: kdf/3    // SK = kdf(MK, na, nb)
+functions: kdf/3, mac/2    // SK = kdf(MK, na, nb), mac = mac(key, message)
 
 rule init_MK:
     [ Fr(~mk) ]
@@ -27,24 +27,26 @@ rule Alex_nonce:
 
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]
-    --[ ]->
+    --[ Receive(na) ]->
     [ Out(~nb), State_B1($B, $A, ~nb, na) ]
 
 rule Alex_ack:
     let
         SK = kdf(mk, ~na, nb)
+        MAC = mac(SK, 'ACK')
     in
     [State_A1($A, $B, ~na), In(nb), !MK($A, $B, mk) ]
     --[ Install(SK), DONE_A($A) ]->
-    [Out('ACK'), SK_Installed($A, $B, SK, ~na, nb) ]
+    [Out(MAC), SK_Installed_A($A, $B, SK, ~na, nb) ]
 
 rule Blake_ack:
     let
         SK = kdf(mk, na, ~nb)
+        MAC = mac(SK, 'ACK')
     in
-    [ State_B1($B, $A, ~nb, na), In('ACK'), !MK($A, $B, mk) ]
+    [ State_B1($B, $A, ~nb, na), In(MAC), !MK($A, $B, mk) ]
     --[ Install(SK), DONE_B($B) ]->
-    [ SK_Installed($B, $A, SK, na, ~nb) ]
+    [ SK_Installed_B($B, $A, SK, na, ~nb) ]
 
 
 lemma BothDone:
@@ -55,15 +57,9 @@ lemma SecureKey:
     " All B SK #j. DONE_B(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
 
 // NOTE:
-// It's better to write the IDEAL security property (`all-traces`) rather than looking for an attack trace.
-// This way, if an attack exists, the lemma turns RED (Falsified), which visually flags the vulnerability.
-// I kept my original `exists-trace` lemma commented out below. It turned GREEN 
-// because it successfully found the attack, but standard practice prefers security properties to fail.
-//
-// lemma OnlyBlakeDone_AttackTrace:
-//     exists-trace
-//     " Ex B #j. DONE_B(B)@#j & not (Ex A #i. DONE_A(A)@#i & #i < #j) "
-
+// I am keeping the EXACT SAME lemma from Step 2 to visually see the improvement.
+// In Step 2, this lemma was RED (Falsified) because the ACK could be forged.
+// Now in Step 3, thanks to the MAC verification, this exact same lemma is GREEN (Verified).
 lemma Blake_Authentication:
     " All B #j. DONE_B(B)@#j ==> Ex A #i. DONE_A(A)@#i & #i < #j "
 

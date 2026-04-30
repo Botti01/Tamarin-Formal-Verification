@@ -47,14 +47,14 @@ lemma BothDone:
     exists-trace
     " Ex A B #i #j. DONE(A)@i & DONE(B)@j & #i < #j "
 
-// EDUCATIONAL NOTE:
-// In this lemma we are using the generic action `DONE(B)`.
-// Since we used the action `DONE(...)` for both Alex and Blake in the rules,
-// Tamarin does not distinguish the roles: to the prover, it is just a "DONE" action associated with a public name.
+// NOTE:
+// In this lemma I am using the generic action `DONE(B)`.
+// Since I used the action `DONE(...)` for both Alex and Blake in the rules,
+// Tamarin does not distinguish the roles: it just sees a "DONE" action with a public name.
 // Consequently, this single lemma tests the key secrecy for both actors simultaneously.
 // 
-// If we wanted to test the secrecy EXCLUSIVELY for Blake (without testing Alex),
-// we would have to use different action fact names in the rules:
+// If I wanted to test the secrecy EXCLUSIVELY for Blake (without testing Alex),
+// I would have to use different action fact names in the rules:
 // - In rule Alex_ack: --[ DONE_A($A) ]->
 // - In rule Blake_ack: --[ DONE_B($B) ]->
 // And the lemma would be:
