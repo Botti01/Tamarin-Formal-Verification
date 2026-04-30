@@ -27,7 +27,7 @@ rule Alex_nonce:
 
 rule Blake_nonce:
     [ Fr(~nb), In(na) ]
-    --[ Receive(na) ]->
+    --[ ]->
     [ Out(~nb), State_B1($B, $A, ~nb, na) ]
 
 rule Alex_ack:
@@ -35,7 +35,7 @@ rule Alex_ack:
         SK = kdf(mk, ~na, nb)
     in
     [State_A1($A, $B, ~na), In(nb), !MK($A, $B, mk) ]
-    --[ Receive(nb), SendAck('ACK'), Install(SK), DONE_A($A) ]->
+    --[ Install(SK), DONE_A($A) ]->
     [Out('ACK'), SK_Installed($A, $B, SK, ~na, nb) ]
 
 rule Blake_ack:
@@ -43,7 +43,7 @@ rule Blake_ack:
         SK = kdf(mk, na, ~nb)
     in
     [ State_B1($B, $A, ~nb, na), In('ACK'), !MK($A, $B, mk) ]
-    --[ ReceiveAck('ACK'), Install(SK), DONE_B($B) ]->
+    --[ Install(SK), DONE_B($B) ]->
     [ SK_Installed($B, $A, SK, na, ~nb) ]
 
 
@@ -55,8 +55,13 @@ lemma SecureKey:
     " All B SK #j. DONE_B(B)@#j & Install(SK)@#j ==> not (Ex #r. K(SK)@#r) "
 
 
+// NOTE:
+// This is an `exists-trace` lemma. A "Verified" (Green) result means Tamarin
+// successfully FOUND a trace that satisfies the condition.
+// Since the condition asks if Blake can finish WITHOUT Alex finishing,
+// the Green result confirms that the ACK forgery attack exists!
 lemma OnlyBlakeDone:
     exists-trace
-    " Ex B #j. DONE_B(B)@#j & not (Ex A #i. DONE_A(A)@i & #i < #j) "
+    " Ex B #j. DONE_B(B)@#j & not (Ex A #i. DONE_A(A)@#i & #i < #j) "
 
 end
