@@ -270,6 +270,7 @@ Se desideri utilizzare le stesse macro in più regole, lemmi o restrizioni, puoi
 
 Oltre a `[use_induction]`, esistono altre annotazioni fondamentali:
 * **`[reuse]`**: Un lemma con questa annotazione verrà utilizzato nelle dimostrazioni di tutti i lemmi successivi. Utile per dimostrare proprietà intermedie.
+  * *Pro-tip: Combinare `[reuse, use_induction]` in un "helper lemma" è il pattern standard per spezzare i loop infiniti nella ricerca all'indietro (backward search), tipici di quando si modella la ritrasmissione dei messaggi. L'helper lemma dimostra matematicamente che il loop ha un'origine ben definita (es. "un Resend può esistere solo se c'è stato un Send iniziale"), e i lemmi principali riutilizzano questa verità per evitare di bloccarsi (timeout).*
 * **`[sources]`**: Essenziale quando Tamarin fallisce a causa di loop infiniti durante la risoluzione delle origini dei fatti (*partial deconstructions*). I *sources lemmas* aiutano a raffinare le origini dei fatti durante la precomputazione.
 
 ---

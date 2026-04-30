@@ -273,6 +273,7 @@ If you want to use the same macros across multiple rules, lemmas, or restriction
 
 Besides `[use_induction]`, there are other lemma annotations that deeply change how Tamarin executes proofs:
 * **`[reuse]`**: A lemma with this annotation will be used in the proofs of all subsequent lemmas. It is a very useful mechanism for proving intermediate lemmas and simplifying the final proof.
+  * *Pro-tip: Combining `[reuse, use_induction]` in a "helper lemma" is the standard pattern to break infinite backward search loops (e.g., when modeling message retransmissions). The helper lemma proves that the loop has a definite origin, and the main lemmas reuse this fact to avoid hanging.*
 * **`[sources]`**: This is essential when Tamarin fails to finish a proof due to infinite loops during resolution (the so-called *partial deconstructions*). *Sources lemmas* are applied automatically to help refine fact origins during precomputation.
 
 ---
