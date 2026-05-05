@@ -35,3 +35,8 @@ This is a personal/academic project.
 - Manual (latest): [Manual](https://tamarin-prover.com/manual/master/book/001_introduction.html)
 - Source code repository: [Tamarin Github](https://github.com/tamarin-prover/tamarin-prover)
 
+### Exercises References:
+- [Tamarin Teachings](https://github.com/tamarin-prover/teaching/tree/master/handouts)
+- [Toy Protocols](https://github.com/benjaminkiesl/tamarin_toy_protocol)
+- [Tamarin Workshop](https://github.com/felixlinker/tamarin-workshop)
+- [Workshop](https://github.com/sgiampietro/tamarin-tutorial)
