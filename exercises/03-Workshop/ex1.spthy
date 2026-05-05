@@ -1,0 +1,35 @@
+/*
+ *  Author: Andrea Botticella
+ *  Model Name: ex1.spthy
+ *  Status: DEVELOPMENTAL
+ *
+ *  Comments: Exercise 1 from the Tamarin Workshop
+ */
+
+theory ex1
+begin
+
+builtins: symmetric-encryption
+
+rule KeyGen:
+  [ Fr(~k) ]
+  -->
+  [ !LongTermKey($A, ~k) ]
+
+rule SendMsg:
+  [ Fr(~msg), !LongTermKey($A, ~k) ]
+  --[ MessageWasSentBy($A, ~msg) ]->
+  [ Out(senc(~msg, ~k)) ]
+
+rule Leak:
+  [ !LongTermKey($A, ~k) ]
+  --[ ParticipantWasCompromised($A) ]->
+  [ Out(~k) ]
+
+lemma Secrecy:
+  " All p m #t. MessageWasSentBy(p, m)@#t ==> not Ex #x. K(m)@#x "
+
+lemma SecrecyWeakened:
+  " All p m #t. MessageWasSentBy(p, m)@#t ==> not (Ex #x. K(m)@#x) | (Ex #y. ParticipantWasCompromised(p)@#y) "
+
+end

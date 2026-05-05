@@ -1,0 +1,201 @@
+/*
+ *  Author: Andrea Botticella
+ *  Model Name: ex3_step4.spthy
+ *  Status: DEVELOPMENTAL
+ *
+ *  Comments: Exercise 3 from the Tamarin Workshop, complete version.
+ */
+
+
+
+theory ex3_step4
+begin
+
+/** Channel models (begin) */
+
+// 1. Secure Channel (Adversary reads/writes ONLY if nodes are compromised)
+rule SecureChannelSend:
+  [ OutSecure($From, $To, m) ] --> [ !Sec($From, $To, m) ]
+
+rule AdversarySecureChannelSend:
+  [ In(m), !Compromised($From) ] --> [ InSecure($From, $To, m) ]
+
+rule SecureChannelReceive:
+  [ !Sec($From, $To, m) ] --> [ InSecure($From, $To, m) ]
+
+rule AdversarySecureReceive:
+  [ !Sec($From, $To, m), !Compromised($To) ] --> [ Out(m) ]
+
+// 2. Confidential Channel (Adversary CANNOT read, but CAN inject freely)
+rule ConfidentialChannelSend:
+  [ OutConfidential($To, m) ] --> [ !Conf($To, m) ]
+
+rule AdversaryConfidentialChannelSend:
+  [ In(m) ] --> [ InConfidential($To, m) ]
+
+rule ConfidentialChannelReceive:
+  [ !Conf($To, m) ] --> [ InConfidential($To, m) ]
+
+rule AdversaryConfidentialReceive:
+  [ !Conf($To, m), !Compromised($To) ] --> [ Out(m) ]
+
+// 3. Rule to compromise an endpoint or client
+rule PartyCompromise:
+  []
+  --[ IsCompromised($Node), SomeCompromise() ]->
+  [ !Compromised($Node) ]
+
+/** Channel models (end) */
+
+
+// --- SETUP AND REGISTRATION ---
+
+// Declares the Authorization Server and its endpoints
+rule AuthServer:
+  []
+  --[ IsAuthEndpoint($Server, $AuthEndpoint)
+    , IsTokenEndpoint($Server, $TokenEndpoint) ]->
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint) ]
+
+// Declares the Client
+rule Client:
+  [] --> [ !Client($Client) ]
+
+// Registers the Client with the Auth Server, generating a shared secret
+rule Registration:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Client($Client)
+  , Fr(~sharedSecret) ]
+  -->
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+
+// Binds a Redirect URI to the registered Client
+rule RedirectURI:
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+  --[ IsRedirectURI($Server, $Client, $URI) ]->
+  [ !RedirectURI($Server, $Client, $URI) ]
+
+
+// --- ATTACK MODEL (COMPROMISE) ---
+
+// Models the possibility that the shared secret is leaked/stolen
+rule SharedSecretLeak:
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+  --[ CompromisedSecret($Server, $Client)
+    , SomeCompromise() ]->
+  [ Out(~sharedSecret) ]
+
+
+// --- STEP 1 & 2: AUTHORIZATION REQUEST ---
+
+// The Client sends an authorization request via the browser (Confidential Channel)
+rule AuthorizationRequest:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , !RedirectURI($Server, $Client, $URI)
+  , Fr(~state) ]
+  --[ RequestToken($Client, $Server, $Scope) ]->
+  [ OutConfidential($AuthEndpoint, <'auth_req', $Client, $URI, $Scope, ~state>)
+  , St_ClientAuthRequested($Client, $Server, $URI, ~state) ]
+
+
+// --- STEP 3: AUTHORIZATION RESPONSE ---
+
+// The AS receives the request, generates a code, and redirects the browser back (Confidential Channel)
+rule AuthorizationResponse:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , !RedirectURI($Server, $Client, $URI)
+  , InConfidential($AuthEndpoint, <'auth_req', $Client, $URI, $Scope, state>)
+  , Fr(~code) ]
+  -->
+  [ OutConfidential($URI, <'auth_response', ~code, state>)
+  , St_AuthServerResponded($Server, $Client, $URI, $Scope, ~code) ]
+
+
+// --- STEP 4: CODE EXCHANGE (TOKEN REQUEST) ---
+
+// The Client uses a Secure Channel to exchange the code for a token.
+// We use $TmpClient to model the specific TLS connection/socket used by the client.
+rule AccessTokenRequest:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , !Client($TmpClient)
+  , St_ClientAuthRequested($Client, $Server, $URI, ~state)
+  , InConfidential($URI, <'auth_response', code, ~state>) ]
+  --[ AssumeUncompromised($TmpClient) ]->
+  [ OutSecure($TmpClient, $TokenEndpoint, <'token_request', $Client, $URI, code, ~sharedSecret>)
+  , St_ClientTokenRequest($Client, $Server) ]
+
+// This restriction forces Tamarin to only consider traces where the temporary client socket is NOT compromised.
+// Otherwise, the adversary could trivially read the secure channel.
+restriction AssumeUncompromised:
+  "All client #x.
+        AssumeUncompromised(client) @ #x
+    ==> (not Ex #y. IsCompromised(client) @ #y)"
+
+
+// --- STEP 5: TOKEN ISSUANCE ---
+
+// The AS verifies the secret and the code, then issues the Access Token over the Secure Channel.
+rule AccessTokenResponse:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , St_AuthServerResponded($Server, $Client, $URI, $Scope, ~code)
+  , InSecure($TmpClient, $TokenEndpoint, <'token_request', $Client, $URI, ~code, ~sharedSecret>)
+  , Fr(~token) ]
+  --[ IssueToken($Server, $Client, $Scope, ~token) ]->
+  [ OutSecure($Client, $TmpClient, <'token', ~token>) ]
+
+
+// --- LEMMAS AND PROPERTIES ---
+
+// Checks if the protocol can run completely from start to finish without adversary interference.
+lemma Executability:
+  exists-trace
+  "Ex client server scope token #x #y.
+      RequestToken(client, server, scope) @ #x
+    & IssueToken(server, client, scope, token) @ #y
+    & (not Ex #z. SomeCompromise() @ #z)"
+
+// Proves the token remains secret UNLESS specific compromise events occur (e.g. stolen secret, compromised endpoints)
+lemma TokenSecrecy:
+  "All server client scope t #x.
+        IssueToken(server, client, scope, t) @ #x
+    ==>   (not Ex #y. K(t) @ #y)
+        | (Ex uri #y1 #y2 #y3.
+              IsRedirectURI(server, client, uri) @ #y1
+            & IsCompromised(uri) @ #y2
+            & CompromisedSecret(server, client) @ #y3)
+        | (Ex aep #y1 #y2 #y3.
+              IsCompromised(aep) @ #y1
+            & IsAuthEndpoint(server, aep) @ #y2
+            & CompromisedSecret(server, client) @ #y3)
+        | (Ex tep #y1 #y2.
+              IsCompromised(tep) @ #y1
+            & IsTokenEndpoint(server, tep) @ #y2)
+        | (Ex server2 client2 uri #y1 #y2.
+              IsRedirectURI(server, client, uri) @ #y1
+            & IsRedirectURI(server2, client2, uri) @ #y2
+            & not (server = server2))"
+
+// Proves that when AS issues a token, the Client actually requested it, UNLESS compromised.
+lemma Agreement:
+  "All server client scope t #x.
+        IssueToken(server, client, scope, t) @ #x
+    ==>   (Ex #y. RequestToken(client, server, scope) @ #y)
+        | (Ex uri #y1 #y2.
+              IsRedirectURI(server, client, uri) @ #y1
+            & IsCompromised(uri) @ #y2)
+        | (Ex tep #y1 #y2.
+              IsCompromised(tep) @ #y1
+            & IsTokenEndpoint(server, tep) @ #y2)
+        | (Ex aep #y1 #y2.
+              IsCompromised(aep) @ #y1
+            & IsAuthEndpoint(server, aep) @ #y2)
+        | (Ex server2 client2 uri #y1 #y2.
+              IsRedirectURI(server, client, uri) @ #y1
+            & IsRedirectURI(server2, client2, uri) @ #y2
+            & not (server = server2))"
+
+end

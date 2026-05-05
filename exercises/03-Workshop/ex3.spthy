@@ -1,0 +1,116 @@
+/*
+ *  Author: Andrea Botticella
+ *  Model Name: ex3.spthy
+ *  Status: DEVELOPMENTAL
+ *
+ *  Comments: Exercise 3 from the Tamarin Workshop, complete until the end of step 3
+ *
+ */
+
+
+theory ex3
+begin
+
+/** Secure channel model (begin) */
+
+rule SecureChannelSend:
+  [ OutSecure($From, $To, m) ]
+  -->
+  [ !Sec($From, $To, m) ]
+
+rule SecureChannelReceive:
+  [ !Sec($From, $To, m) ]
+  -->
+  [ InSecure($From, $To, m) ]
+
+/** Secure channel model (end) */
+
+
+rule AuthServer:
+  [] 
+  --> 
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint) ]
+
+rule Client:
+  []
+  --> 
+  [ !Client($Client) ]
+
+// --- SETUP AND REGISTRATION ---
+rule Registration:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint), !Client($Client), Fr(~sharedSecret) ]
+  -->
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+
+rule RegisterRedirectURI:
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+  -->
+  [ !RedirectURI($Server, $Client, $RedirectURI) ]
+
+// --- ATTACK MODEL (COMPROMISE) ---
+rule SharedSecretLeak:
+  [ !Registration($Server, $Client, ~sharedSecret) ]
+  --[ CompromisedSecret($Server, $Client) ]->
+  [ Out(~sharedSecret) ]
+
+// --- STEP 1 & 2: AUTHORIZATION REQUEST ---
+rule AuthorizationRequest:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , !RedirectURI($Server, $Client, $URI)
+  , Fr(~state) ]
+  --[ RequestToken($Client, $Server, $Scope) ]->
+  [ OutSecure($Client, $AuthEndpoint, <'auth_req', $Client, $URI, $Scope, ~state>)
+  , St_ClientAuthRequested($Client, $Server, $URI, ~state) ]
+
+// --- STEP 3: AUTHORIZATION RESPONSE ---
+rule AuthorizationResponse:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , !RedirectURI($Server, $Client, $URI)
+  , InSecure($Client, $AuthEndpoint, <'auth_req', $Client, $URI, $Scope, state>)
+  , Fr(~code) ]
+  -->
+  [ OutSecure($AuthEndpoint, $URI, <'auth_response', ~code, state>)
+  , St_AuthServerResponded($Server, $Client, $URI, $Scope, ~code) ]
+
+// --- STEP 4: CODE EXCHANGE (TOKEN REQUEST) ---
+rule AccessTokenRequest:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , St_ClientAuthRequested($Client, $Server, $URI, ~state)
+  , InSecure($AuthEndpoint, $URI, <'auth_response', code, ~state>) ]
+  -->
+  [ OutSecure($Client, $TokenEndpoint, <'token_request', $Client, code, ~sharedSecret>)
+  , St_ClientTokenRequest($Client, $Server) ]
+
+// --- STEP 5: TOKEN ISSUANCE ---
+rule AccessTokenResponse:
+  [ !AuthServer($Server, $AuthEndpoint, $TokenEndpoint)
+  , !Registration($Server, $Client, ~sharedSecret)
+  , St_AuthServerResponded($Server, $Client, $URI, $Scope, ~code)
+  , InSecure($Client, $TokenEndpoint, <'token_request', $Client, ~code, ~sharedSecret>)
+  , Fr(~token) ]
+  --[ IssueToken($Server, $Client, $Scope, ~token) ]->
+  [ OutSecure($TokenEndpoint, $Client, <'token', ~token>) ]
+
+
+
+// --- LEMMAS AND PROPERTIES ---
+lemma Executability:
+  exists-trace
+  "Ex client server scope token #x #y.
+      RequestToken(client, server, scope) @ #x
+    & IssueToken(server, client, scope, token) @ #y"
+
+lemma TokenSecrecy:
+  "All server client scope t #x.
+        IssueToken(server, client, scope, t) @ #x
+    ==> (not Ex #y. K(t) @ #y)"
+
+lemma Agreement:
+  "All server client scope t #x.
+        IssueToken(server, client, scope, t) @ #x
+    ==> (Ex #y. RequestToken(client, server, scope) @ #y)"
+
+end
