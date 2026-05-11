@@ -550,9 +550,13 @@ If the model is already very low-level, plain Tamarin rules may still be better.
 
 SAPIC+ is basically a more readable front-end for modeling the same kind of protocol behavior that Tamarin can already analyze.
 
+---
+
 ## 21. Comparing rule-based and process-based modeling
 
 A protocol can be modeled in terms of rules or as a single process. The process is translated into a set of rules that adhere to the semantics of process calculus. It is even possible to mix a process declaration with a set of rules, although this is not recommended, as the interactions between the rules and the process depend on how precisely this translation is defined.
+
+---
 
 ## 22. Grammar details and conditionals
 
